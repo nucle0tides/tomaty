@@ -21,12 +21,14 @@ from tomaty.tomaty_notebook import TomatyNotebook, TomatyPage
 from tomaty.tomaty_label import TimerLabel, StatsLabel
 from tomaty.tomaty_button import TomatyButton
 from tomaty.lib.serialization import tomaty_serialization
+from tomaty.lib.utilities import counting_utilities
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, GLib
+from pdb import set_trace as bp
 
-TOMA_MINUTES = 25
-BREAK_MINUTES = 5
+TOMA_MINUTES = .5
+BREAK_MINUTES = .5
 EXTENDED_BREAK_MINUTES = 30
 TOMA_SET = 4
 
@@ -94,21 +96,27 @@ class Tomaty(Gtk.Window):
         self.tomatyButton = TomatyButton(tmargin=5, bmargin=5)
         self.tomatyButton.connect("clicked", self.clickStart)
         self.timerPage.pack_start(self.tomatyButton, False, False, 0)
-
-        # statistics page setup
+        
+        # init serializer
         self.tomaty_serializer = tomaty_serialization.TomatySerializer()
 
+        # statistics page setup
         self.statsPage = TomatyPage()
 
-        # counter label for cycles (1 toma + 1 break = 1 cycle)
-        self.countLabel = StatsLabel(
-            label=COUNT.format(self.tomatosCompleted), smargin=10, emargin=10)
-
+        # initialize total time before initializing tomatos completed
         self.total_time = self.tomaty_serializer.total_time
         self.totalLabel = StatsLabel(
             label=TOTAL_TIME.format(self.total_time),
             emargin=25,
             justify=Gtk.Justification.LEFT)
+
+        # counter label for cycles (1 toma + 1 break = 1 cycle)
+        # we're going to calculate self.tomatosCompleted on the fly because this is a choice
+        # I can make as a professional software engineer so fuck off 
+        if self.total_time != timedelta(0):
+            self.tomatosCompleted = counting_utilities.calculate_tomatos(self.total_time, self.tomatoroLength)
+        self.countLabel = StatsLabel(
+            label=COUNT.format(self.tomatosCompleted), smargin=10, emargin=10)
 
         self.statsPage.pack_start(self.countLabel, False, False, 0)
         self.statsPage.pack_start(self.totalLabel, False, False, 0)
